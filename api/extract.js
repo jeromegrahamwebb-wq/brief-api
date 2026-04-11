@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-
+// redeploy trigger
 export default async function handler(req, res) {
   // ✅ CORS (critical)
   res.setHeader("Access-Control-Allow-Origin", "*");
