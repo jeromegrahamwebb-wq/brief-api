@@ -1,7 +1,5 @@
-import OpenAI from "openai";
-// redeploy trigger
 export default async function handler(req, res) {
-  // ✅ CORS (critical)
+  // ✅ CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -17,62 +15,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { documentText, documentType, jurisdiction, userConcern } = req.body || {};
+    const { document } = req.body;
 
-    if (!documentText || typeof documentText !== "string") {
-      return res.status(400).json({ error: "Missing documentText" });
+    if (!document) {
+      return res.status(400).json({ error: "Missing document text" });
     }
 
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
-    const systemPrompt = `
-You are generating a document orientation report for a legal information tool.
-This is general legal information only, not legal advice.
-
-Return valid JSON with exactly these keys:
-- document_type_and_role
-- what_this_document_is_doing
-- key_obligations_or_demands
-- deadlines_or_time_sensitivity
-- risk_signals_or_pressure_points
-- important_terms_or_clauses
-- missing_or_unstated_information
-- practical_orientation_summary
-
-Rules:
-- Be neutral
-- Do not give legal advice
-- Do not predict outcomes
-- Do not invent facts
-`;
-
-    const userMessage = `
-Document type: ${documentType || "Unknown"}
-Jurisdiction: ${jurisdiction || "Unknown"}
-User concern: ${userConcern || "None provided"}
-
-Document text:
-${documentText}
-`;
-
-    const response = await client.responses.create({
-      model: "gpt-5",
-      input: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage }
-      ]
-    });
-
+    // 🔹 Your OpenAI logic goes here
     return res.status(200).json({
-      result: response.output_text
+      success: true,
+      message: "Document received",
     });
 
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      error: "Analysis failed"
-    });
+  } catch (err) {
+    return res.status(500).json({ error: "Server error" });
   }
 }
