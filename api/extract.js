@@ -1,34 +1,163 @@
+import OpenAI from "openai";
 
-export default async function handler(req, res) {
-  // ✅ CORS headers
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
 
-  // ✅ Handle preflight
+function extractJsonObject(text) {
+  if (!text || typeof text !== "string") {
+    throw new Error("Model returned empty content");
+  }
+
+  const trimmed = text.trim();
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {}
+
+  const match = trimmed.match(/\{[\s\S]*\}/);
+  if (!match) {
+    throw new Error("No JSON object found in model output");
+  }
+
+  return JSON.parse(match[0]);
+}
+
+function validateStructuredResult(data) {
+  const requiredKeys = [
+    "documentType",
+    "documentRole",
+    "whatThisIsDoing",
+    "keyObligations",
+    "deadlines",
+    "riskSignals",
+    "importantTerms",
+    "missingInfo",
+    "summary",
+  ];
+
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("Structured result must be an object");
+  }
+
+  for (const key of requiredKeys) {
+    if (!(key in data)) {
+      throw new Error(`Missing key: ${key}`);
+    }
+    if (typeof data[key] !== "string") {
+      throw new Error(`Field must be a string: ${key}`);
+    }
+  }
+
+  return data;
+}
+
+export default async function handler(req, res) {
+  setCors(res);
+
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  // ✅ Only allow POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const { document } = req.body;
+    const {
+      documentText,
+      documentType = "",
+      jurisdiction = "",
+      userConcern = "",
+    } = req.body || {};
 
-    if (!document) {
-      return res.status(400).json({ error: "Missing document text" });
+    if (!documentText || typeof documentText !== "string" || !documentText.trim()) {
+      return res.status(400).json({ error: "Missing documentText" });
     }
 
-    // 🔹 Your OpenAI logic goes here
-    return res.status(200).json({
-      success: true,
-      message: "Document received",
+    const safeText = documentText.slice(0, 30000);
+
+    const systemPrompt = `
+You are a legal-document orientation engine.
+
+Your job is to read the provided document text and return a structured, plain-English orientation report.
+
+You must follow these rules exactly:
+
+1. Return ONLY valid JSON.
+2. Do not wrap the JSON in markdown.
+3. Do not add commentary before or after the JSON.
+4. Do not include any explanatory note, disclaimer, intro, or conclusion outside the JSON.
+5. Every field in the schema must be present.
+6. If information is missing or unclear, use an empty string.
+7. Write in neutral, plain English.
+8. Do not give legal advice.
+9. Do not recommend a course of action.
+10. Describe what the document appears to do, require, demand, or imply based only on the text provided.
+
+Return JSON matching this exact shape:
+
+{
+  "documentType": "",
+  "documentRole": "",
+  "whatThisIsDoing": "",
+  "keyObligations": "",
+  "deadlines": "",
+  "riskSignals": "",
+  "importantTerms": "",
+  "missingInfo": "",
+  "summary": ""
+}
+    `.trim();
+
+    const userPrompt = `
+Analyze the following document and return only the required JSON.
+
+Document type provided by user: ${documentType}
+Jurisdiction provided by user: ${jurisdiction}
+User concern: ${userConcern}
+
+Document text:
+${safeText}
+    `.trim();
+
+    const response = await client.responses.create({
+      model: "gpt-5",
+      input: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
     });
 
+    const rawOutput = response.output_text || "";
+
+    let parsed;
+    try {
+      parsed = extractJsonObject(rawOutput);
+    } catch (err) {
+      console.error("Invalid JSON from model:", err.message);
+      return res.status(502).json({ error: "Model returned invalid JSON" });
+    }
+
+    let validated;
+    try {
+      validated = validateStructuredResult(parsed);
+    } catch (err) {
+      console.error("Schema validation failed:", err.message);
+      return res.status(502).json({ error: "Model returned malformed structured output" });
+    }
+
+    return res.status(200).json({
+      result: validated,
+    });
   } catch (err) {
-    return res.status(500).json({ error: "Server error" });
+    console.error("Unhandled /api/extract error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
