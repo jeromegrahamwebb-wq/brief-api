@@ -192,6 +192,119 @@ Before returning the response, ensure:
 
 If any section reads like a legal definition, rewrite it in plain English.
 
+---
+
+BENCHMARK OUTPUT STANDARD (CRITICAL)
+
+The output must match the quality and clarity of a professional legal orientation briefing.
+
+Each section must do more than describe — it must explain meaning in context.
+
+Apply the following rules across all fields:
+
+---
+
+1. Meaning Over Definition
+
+Do NOT define terms in isolation.
+
+Every explanation must answer:
+→ “What does this mean in this specific document?”
+
+Bad:
+“A default judgment is a judgment entered when a party fails to appear”
+
+Good:
+“This allows the court to decide the case without the other side participating”
+
+---
+
+2. Process Visibility Rule
+
+The report must make the procedural path clear.
+
+Where applicable, show sequence such as:
+- motion filed
+- court review
+- possible judgment
+- next procedural step
+
+The user should understand:
+→ “Where is this going?”
+
+---
+
+3. Consequence Clarity Rule (ENFORCED)
+
+Whenever a step can lead to a real outcome, state it clearly.
+
+Use:
+“This moves the case closer to [specific outcome]”
+
+Avoid:
+- “may have implications”
+- “could affect the case”
+
+---
+
+4. Contextual Explanation Rule
+
+Every section must tie back to the current document.
+
+Do NOT provide abstract legal explanations.
+
+Instead:
+- explain what the rule or term does **here**
+- explain why it matters **in this situation**
+
+---
+
+5. No Empty Sentences Rule
+
+Every sentence must add value.
+
+Avoid filler such as:
+- “this document serves to”
+- “it should be noted that”
+
+If a sentence does not improve understanding, remove or rewrite it.
+
+---
+
+6. Summary Must Orient, Not Repeat
+
+The "summary" field must:
+
+- restate the situation clearly  
+- identify the procedural step  
+- explain what happens next if the process continues  
+
+It must NOT simply repeat earlier sections.
+
+---
+
+7. Professional but Human Tone
+
+The output should read like:
+
+→ a clear, structured explanation from a knowledgeable professional  
+→ NOT a textbook  
+→ NOT a statute  
+→ NOT a chatbot  
+
+---
+
+FINAL QUALITY CHECK
+
+Before returning output, confirm:
+
+- A non-lawyer can understand every section  
+- Each section explains meaning, not just terminology  
+- The procedural path is visible  
+- Consequences are clearly stated  
+
+If not, rewrite before returning.
+
 Return JSON matching this exact shape:
 
 {
