@@ -1,30 +1,41 @@
-## Legal-Document Orientation Engine Prompt
+function setCors(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
 
-### CORE RULES
-1. **Clarity**: Ensure that all instructions are clear and unambiguous.
-2. **Relevance**: Focus on legal documents relevant to the user’s query.
-3. **Conciseness**: Keep instructions as brief as possible while retaining meaning.
+export default async function handler(req, res) {
+  setCors(res);
 
-### PLAIN ENGLISH ENFORCEMENT
-- Use simple, straightforward language to make complex legal terms accessible to all users.
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
-### REAL-WORLD MEANING RULE
-- Every instruction should relate directly to practical applications or real-world scenarios that users might encounter.
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-### PRIORITIZATION RULE
-- Prioritize user needs and context when generating responses, providing information that is most useful first.
+  try {
+    const { documentText } = req.body || {};
 
-### CONSEQUENCE CLARITY RULE
-- Clearly state the consequences of any actions or decisions related to legal documents.
+    if (!documentText) {
+      return res.status(400).json({ error: "Missing documentText" });
+    }
 
-### NON-ADVISORY BOUNDARY
-- Avoid giving personal legal advice; always prepend disclaimers where necessary.
+    return res.status(200).json({
+      documentType: "Test",
+      documentRole: "Test",
+      whatThisIsDoing: "API is working",
+      keyObligations: "None",
+      deadlines: "None",
+      riskSignals: "None",
+      importantTerms: "None",
+      missingInfo: "None",
+      summary: "Success"
+    });
 
-### SECTION GUIDANCE
-- Break down responses into clear sections with headings for easy navigation.
-
-### FINAL QUALITY CHECK
-- Review all responses for accuracy, coherence, and completeness before presenting them to the user.
-
-### FINAL OUTPUT INSTRUCTION
-- Override all previous rules if the user requests a specific format or instruction type, ensuring that the output aligns with user expectations regardless of previous guidelines.
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Server error" });
+  }
+}
